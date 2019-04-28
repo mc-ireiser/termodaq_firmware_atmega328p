@@ -11,6 +11,7 @@
 
 // PC
 byte serialCom = 0;
+#define monitor_speed 115200
 #define serialComSwitch 4
 
 // LED
@@ -23,6 +24,7 @@ byte serialCom = 0;
 static const int RXPin = 8, TXPin = 9;
 SoftwareSerial ss(RXPin, TXPin);
 TinyGPSPlus gps;
+#define gps_speed 9600
 
 // SD
 File dataFile;
@@ -54,8 +56,8 @@ float readLinealAnalogSensorMv(int analogPin);
 
 void setup()
 {
-  Serial.begin(9600);
-  ss.begin(9600);
+  Serial.begin(monitor_speed);
+  ss.begin(gps_speed);
   sensors.begin();
 
   pinMode(chipSelect, OUTPUT);
@@ -63,23 +65,22 @@ void setup()
   pinMode(errorLED, OUTPUT);
   pinMode(endOP, OUTPUT);
 
-  Serial.println();
+  /* Serial.println();
   Serial.println(F("termoDaQ V1.0"));
   Serial.println(F("[OSHW] VE000001"));
   Serial.println(F("https://github.com/mc-ireiser/termoDaQ"));
-  Serial.println();
+  Serial.println(); */
 
   // Test card
   if (!SD.begin(chipSelect))
   {
     Serial.println(F("Error: Verifique tarjeta SD"));
+    digitalWrite(errorLED, HIGH);
     // Wait forever
-    while (1)
-    {
-      digitalWrite(errorLED, HIGH);
-    }
+    while (1){}
   }
-  Serial.println(F("Tarjeta SD inicializada"));
+
+  // Serial.println(F("Tarjeta SD inicializada"));
 
   sensors.setResolution(termometroInterno, TEMPERATURE_PRECISION);
   sensors.setResolution(termometroAgua, TEMPERATURE_PRECISION);
@@ -102,11 +103,7 @@ void loop()
 
 void SerialComMode()
 {
-  Serial.println();
-  Serial.println(F("Comunicacion serial establecida"));
-  Serial.println(F("1) Comprobar existencia del DataFile"));
-  Serial.println(F("2) Transmitir DataFile"));
-  Serial.println(F("3) Eliminar DataFile"));
+  Serial.println(F("CS:OK"));
 
   while (serialCom)
   {
@@ -207,25 +204,21 @@ void openDataFile()
 
 void listDataFile()
 {
-  Serial.println();
-
   if (SD.exists(fileName))
   {
     // El archivo existe
-    Serial.println('+');
+    Serial.println(F("DF:EXISTE"));
   }
 
   else
   {
     // El archivo no existe
-    Serial.println('|');
+    Serial.println(F("DF:NO-EXISTE"));
   }
 }
 
 void readDataFile()
 {
-  Serial.println();
-
   File dataF = SD.open("data.txt");
 
   if (dataF)
@@ -241,14 +234,12 @@ void readDataFile()
   else
   {
     // Error abriendo archivo
-    Serial.println('|');
+    Serial.println(F("DF:ERROR"));
   }
 }
 
 void deleteDataFile()
 {
-  Serial.println();
-
   if (SD.exists(fileName))
   {
     SD.remove(fileName);
@@ -256,19 +247,19 @@ void deleteDataFile()
     if (SD.exists(fileName))
     {
       // Error eliminando
-      Serial.println('|');
+      Serial.println(F("DF:ERROR"));
     }
     else
     {
       // Archivo eliminado correctamente
-      Serial.println('+');
+      Serial.println(F("DF:ELIMINADO"));
     }
   }
 
   else
   {
     // El archivo no existe
-    Serial.println('|');
+    Serial.println(F("DF:NO-EXISTE"));
   }
 }
 
