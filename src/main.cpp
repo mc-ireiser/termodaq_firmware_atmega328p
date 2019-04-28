@@ -10,11 +10,14 @@
 #include <DallasTemperature.h>
 
 // PC
-const int serialComSwitch = 4;
-int serialCom = 0;
+byte serialCom = 0;
+#define serialComSwitch 4
 
 // LED
-const int errorLED = 3;
+#define errorLED 3
+
+// SIGNAL
+#define endOP 7
 
 // GPS
 static const int RXPin = 8, TXPin = 9;
@@ -23,7 +26,8 @@ TinyGPSPlus gps;
 
 // SD
 File dataFile;
-const int chipSelect = 10;
+char* fileName = "data.txt";
+#define chipSelect 10
 
 // DS18B20
 #define ONE_WIRE_BUS 5
@@ -57,6 +61,7 @@ void setup()
   pinMode(chipSelect, OUTPUT);
   pinMode(serialComSwitch, INPUT);
   pinMode(errorLED, OUTPUT);
+  pinMode(endOP, OUTPUT);
 
   Serial.println();
   Serial.println(F("termoDaQ V1.0"));
@@ -68,7 +73,7 @@ void setup()
   if (!SD.begin(chipSelect))
   {
     Serial.println(F("Error: Verifique tarjeta SD"));
-    // Wait forever, todo: error led
+    // Wait forever
     while (1)
     {
       digitalWrite(errorLED, HIGH);
@@ -137,10 +142,14 @@ void dataGetMode()
   // Displays information if new sentence is correctly encoded.
   while (ss.available() > 0)
   {
+
     if (gps.encode(ss.read()))
     {
+      Serial.print(F("."));
+
       if (gps.location.isValid() && (gps.date.isValid() && gps.time.isValid()))
       {
+        Serial.println();
         Serial.println();
         Serial.println(F("Data satelital recibida"));
         openDataFile();
@@ -152,6 +161,7 @@ void dataGetMode()
         dataFile.flush();
         closeDataFile();
         Serial.println(F("Ciclo de operacion terminado"));
+        digitalWrite(endOP, HIGH);
         while (1)
           ;
       }
@@ -162,7 +172,7 @@ void dataGetMode()
   if (millis() > 5000 && gps.charsProcessed() < 10)
   {
     Serial.println(F("Error: No se detecta el receptor GPS"));
-    // Wait forever, todo: error led
+    // Wait forever
     while (1)
     {
       digitalWrite(errorLED, HIGH);
@@ -179,7 +189,7 @@ void openDataFile()
   if (!dataFile)
   {
     Serial.println(F("Error: No se puede abrir el archivo de datos data.txt"));
-    // Wait forever, todo: error led
+    // Wait forever
     while (1)
     {
       digitalWrite(errorLED, HIGH);
@@ -199,7 +209,7 @@ void listDataFile()
 {
   Serial.println();
 
-  if (SD.exists("data.txt"))
+  if (SD.exists(fileName))
   {
     // El archivo existe
     Serial.println('+');
@@ -239,11 +249,11 @@ void deleteDataFile()
 {
   Serial.println();
 
-  if (SD.exists("data.txt"))
+  if (SD.exists(fileName))
   {
-    SD.remove("data.txt");
+    SD.remove(fileName);
 
-    if (SD.exists("data.txt"))
+    if (SD.exists(fileName))
     {
       // Error eliminando
       Serial.println('|');
@@ -317,18 +327,15 @@ void saveTempData()
   Serial.println(sensors.getDeviceCount(), DEC);
 
   sensors.requestTemperatures();
-  delay(1000);
+  delay(500);
 
-  float tempC = sensors.getTempC(termometroInterno);
-  dataFile.print(tempC, 4);
+  dataFile.print((sensors.getTempC(termometroInterno)), 4);
   dataFile.print(F(","));
 
-  tempC = sensors.getTempC(termometroAgua);
-  dataFile.print(tempC, 4);
+  dataFile.print((sensors.getTempC(termometroAgua)), 4);
   dataFile.print(F(","));
 
-  tempC = sensors.getTempC(termometroAire);
-  dataFile.print(tempC, 4);
+  dataFile.print((sensors.getTempC(termometroAire)), 4);
   dataFile.print(F(","));
 
   Serial.println(F("    Data DS18B20 almacenada"));
@@ -357,7 +364,6 @@ void saveUvData()
   dataFile.print(volt, 4);
 
   Serial.println(F("    Data MPX5700DP almacenada"));
-  Serial.println();
 }
 
 float readLinealAnalogSensorMv(int analogPin)
@@ -371,7 +377,5 @@ float readLinealAnalogSensorMv(int analogPin)
     delay(2);
   }
 
-  float sensor_value_average = sum / 1000.0;
-  float mV = sensor_value_average * 5.0;
-  return mV;
+  return ((sum / 1000.0) * 5.0);
 }
