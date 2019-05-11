@@ -215,6 +215,8 @@ void listDataFile()
     // El archivo no existe
     Serial.println(F("DF:NO-EXISTE"));
   }
+
+  Serial.println(F("CS:END"));
 }
 
 void readDataFile()
@@ -236,6 +238,8 @@ void readDataFile()
     // Error abriendo archivo
     Serial.println(F("DF:ERROR"));
   }
+
+  Serial.println(F("CS:END"));
 }
 
 void deleteDataFile()
@@ -261,6 +265,8 @@ void deleteDataFile()
     // El archivo no existe
     Serial.println(F("DF:NO-EXISTE"));
   }
+
+  Serial.println(F("CS:END"));
 }
 
 void closeDataFile()
