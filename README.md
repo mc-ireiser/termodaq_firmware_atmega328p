@@ -1,8 +1,8 @@
 # termoDaQ Firmware ATmega328p
+
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fmc-ireiser%2Ftermodaq_firmware_atmega328p.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fmc-ireiser%2Ftermodaq_firmware_atmega328p?ref=badge_shield)
 
-
-## Como iniciar?
+## Como iniciar
 
 Clone o Descarge el **Repositorio**.
 
@@ -88,4 +88,5 @@ avrdude done.  Thank you.
 ```
 
 ## License
+
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fmc-ireiser%2Ftermodaq_firmware_atmega328p.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fmc-ireiser%2Ftermodaq_firmware_atmega328p?ref=badge_large)
