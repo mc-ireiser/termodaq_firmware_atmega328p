@@ -53,6 +53,7 @@ void saveTempData();
 void savePressureData();
 void saveUvData();
 float readLinealAnalogSensorMv(int analogPin);
+float mapfloat(float x, float in_min, float in_max, float out_min, float out_max);
 
 void setup()
 {
@@ -64,6 +65,7 @@ void setup()
   pinMode(serialComSwitch, INPUT);
   pinMode(errorLED, OUTPUT);
   pinMode(endOP, OUTPUT);
+  digitalWrite(endOP, LOW);
 
   /* Serial.println();
   Serial.println(F("termoDaQ V1.0"));
@@ -108,6 +110,7 @@ void SerialComMode()
   while (serialCom)
   {
     int option = Serial.read();
+    Serial.println(option);
 
     switch (option)
     {
@@ -136,41 +139,34 @@ void SerialComMode()
 
 void dataGetMode()
 {
+  
   // Displays information if new sentence is correctly encoded.
   while (ss.available() > 0)
   {
 
     if (gps.encode(ss.read()))
     {
-      Serial.print(F("."));
-
       if (gps.location.isValid() && (gps.date.isValid() && gps.time.isValid()))
       {
-        Serial.println();
-        Serial.println();
-        Serial.println(F("Data satelital recibida"));
         openDataFile();
         saveGpsData();
         saveTempData();
         savePressureData();
         saveUvData();
-        Serial.println();
         dataFile.flush();
         closeDataFile();
-        Serial.println(F("Ciclo de operacion terminado"));
         digitalWrite(endOP, HIGH);
-        while (1)
-          ;
+        delay(60000);
       }
     }
   }
 
   // GPS error
-  if (millis() > 5000 && gps.charsProcessed() < 10)
+  if (millis() > 20000 && gps.charsProcessed() < 10)
   {
     Serial.println(F("Error: No se detecta el receptor GPS"));
-    // Wait forever
-    while (1)
+
+    for (size_t i = 0; i < 10; i++)
     {
       digitalWrite(errorLED, HIGH);
       delay(1000);
@@ -186,19 +182,14 @@ void openDataFile()
   if (!dataFile)
   {
     Serial.println(F("Error: No se puede abrir el archivo de datos data.txt"));
-    // Wait forever
-    while (1)
+    
+    for (size_t i = 0; i < 3; i++)
     {
       digitalWrite(errorLED, HIGH);
       delay(3000);
       digitalWrite(errorLED, LOW);
       delay(1000);
     }
-  }
-  else
-  {
-    Serial.println(F("Archivo: data.txt - Abierto correctamente"));
-    Serial.println();
   }
 }
 
@@ -274,105 +265,170 @@ void closeDataFile()
   dataFile.println();
   dataFile.flush();
   dataFile.close();
-  Serial.println(F("Archivo: data.txt - Cerrado correctamente"));
 }
 
 void saveGpsData()
 {
   // lat, lng, date(m/d/y), time(h:m:s:cs),
-  Serial.println(F("--> GPS"));
 
   dataFile.print(gps.location.lat(), 6);
   dataFile.print(F(","));
   dataFile.print(gps.location.lng(), 6);
   dataFile.print(F(","));
-
-  dataFile.print(gps.date.month());
-  dataFile.print(F("/"));
-  dataFile.print(gps.date.day());
-  dataFile.print(F("/"));
   dataFile.print(gps.date.year());
+  dataFile.print(F("-"));
+  dataFile.print(gps.date.month());
+  dataFile.print(F("-"));
+  dataFile.print(gps.date.day());
   dataFile.print(F(","));
+
+  Serial.print(gps.location.lat(), 6);
+  Serial.print(F(","));
+  Serial.print(gps.location.lng(), 6);
+  Serial.print(F(","));
+  Serial.print(gps.date.year());
+  Serial.print(F("-"));
+  Serial.print(gps.date.month());
+  Serial.print(F("-"));
+  Serial.print(gps.date.day());
+  Serial.print(F(","));
 
   if (gps.time.hour() < 10)
     dataFile.print(F("0"));
+  
   dataFile.print(gps.time.hour());
   dataFile.print(F(":"));
+
+    Serial.print(gps.time.hour());
+    Serial.print(F(":"));
+
   if (gps.time.minute() < 10)
     dataFile.print(F("0"));
+  
   dataFile.print(gps.time.minute());
   dataFile.print(F(":"));
+
+    Serial.print(gps.time.minute());
+    Serial.print(F(":"));
+
   if (gps.time.second() < 10)
     dataFile.print(F("0"));
+  
   dataFile.print(gps.time.second());
-  dataFile.print(F("."));
-  if (gps.time.centisecond() < 10)
-    dataFile.print(F("0"));
-  dataFile.print(gps.time.centisecond());
   dataFile.print(F(","));
 
-  Serial.println(F("    Data GPS almacenada"));
-  Serial.println();
+    Serial.print(gps.time.second());
+    Serial.print(F(","));
 }
 
 void saveTempData()
 {
   // tempInterna, tepmAgua, tempAire,
-  Serial.println(F("--> DS18B20"));
-
-  Serial.print(F("    Termometros conectados: "));
-  Serial.println(sensors.getDeviceCount(), DEC);
-
   sensors.requestTemperatures();
   delay(500);
 
   dataFile.print((sensors.getTempC(termometroInterno)), 4);
   dataFile.print(F(","));
-
   dataFile.print((sensors.getTempC(termometroAgua)), 4);
   dataFile.print(F(","));
-
   dataFile.print((sensors.getTempC(termometroAire)), 4);
   dataFile.print(F(","));
 
-  Serial.println(F("    Data DS18B20 almacenada"));
-  Serial.println();
+  // Serial
+  Serial.print((sensors.getTempC(termometroInterno)), 4);
+  Serial.print(F(","));
+  Serial.print((sensors.getTempC(termometroAgua)), 4);
+  Serial.print(F(","));
+  Serial.print((sensors.getTempC(termometroAire)), 4);
+  Serial.print(F(","));
 }
 
 void savePressureData()
 {
   // pressure,
-  Serial.println(F("--> MPX5700DP"));
 
-  float volt = readLinealAnalogSensorMv(0) / 1024.0;
-  dataFile.print(volt, 4);
+  float volt = readLinealAnalogSensorMv(0);
+
+  if (volt < 0.2)
+  {
+    volt = 0.2;
+  }
+  
+  float kPa = mapfloat(volt, 0.2, 4.5, 0.0, 703.125);
+
+  dataFile.print(kPa, 4);
   dataFile.print(F(","));
 
-  Serial.println(F("    Data MPX5700DP almacenada"));
-  Serial.println();
+  // Serial
+  Serial.print(volt, 4);
+  Serial.print(F(","));
 }
 
 void saveUvData()
 {
   // UV
-  Serial.println(F("--> GUVA-S12SD"));
 
-  float volt = readLinealAnalogSensorMv(3) / 1024.0;
-  dataFile.print(volt, 4);
+  int indice_uv = 0;
+  float sum = 0;
 
-  Serial.println(F("    Data MPX5700DP almacenada"));
+  for (int i = 0; i < 50; i++)
+  {
+    int sensorValue = analogRead(A1);
+    sum = sum + (sensorValue / 1024.0);
+    delay(10);
+  }
+
+  float prom = sum / 50.0;
+  
+  if (prom * 1000 < 50) {
+    indice_uv = 0;
+  } else if (prom * 1000 < 227) {
+    indice_uv = 1;
+  } else if (prom * 1000 < 318) {
+    indice_uv = 2;
+  } else if (prom * 1000 < 408) {
+    indice_uv = 3;
+  } else if (prom * 1000 < 503) {
+    indice_uv = 4;
+  } else if (prom * 1000 < 606) {
+    indice_uv = 5;
+  } else if (prom * 1000 < 696) {
+    indice_uv = 6;
+  } else if (prom * 1000 < 795) {
+    indice_uv = 7;
+  } else if (prom * 1000 < 881) {
+    indice_uv = 8;
+  } else if (prom * 1000 < 976) {
+    indice_uv = 9;
+  } else if (prom * 1000 < 1079) {
+    indice_uv = 10;
+  } else {
+    indice_uv = 11;
+  }
+
+  dataFile.print(indice_uv);
+
+  Serial.println(indice_uv);
 }
 
 float readLinealAnalogSensorMv(int analogPin)
 {
   float sum = 0;
 
-  for (int i = 0; i < 1000; i++)
+  for (int i = 0; i < 50; i++)
   {
     float v = analogRead(analogPin);
-    sum = v + sum;
-    delay(2);
+    sum = sum + v / 1024.0;
+    delay(10);
   }
 
-  return ((sum / 1000.0) * 5.0);
+  float sensorValue = sum / 50;
+  float voltage = sensorValue * 5.0;
+  
+  return (voltage);
+}
+
+float mapfloat(float x, float in_min, float in_max, float out_min, float out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
