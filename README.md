@@ -1,5 +1,6 @@
 # termoDaQ Firmware ATmega328p
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/4476b64ff7fe405083921fa4df7995fd)](https://app.codacy.com/app/mc.ireiser/termodaq_firmware_atmega328p?utm_source=github.com&utm_medium=referral&utm_content=mc-ireiser/termodaq_firmware_atmega328p&utm_campaign=Badge_Grade_Dashboard)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fmc-ireiser%2Ftermodaq_firmware_atmega328p.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fmc-ireiser%2Ftermodaq_firmware_atmega328p?ref=badge_shield)
 
 ## Como iniciar
