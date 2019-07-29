@@ -110,7 +110,6 @@ void SerialComMode()
   while (serialCom)
   {
     int option = Serial.read();
-    Serial.println(option);
 
     switch (option)
     {
